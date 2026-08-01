@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pendataan Wajib Pajak PBJT Kesenian & Hiburan - BAPENDA Paser</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f2647">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WP Kesenian-Hiburan">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --navy:#0f2647;
+    --navy2:#173763;
+    --gold:#c8952c;
+    --paper:#f6f4ee;
+    --ink:#1c2430;
+    --line:#dcd6c8;
+    --green:#2f6b4f;
+    --red:#a8352b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy),var(--navy2));
+    color:#fff;
+    padding:20px 18px;
+  }
+  header h1{margin:0 0 4px 0;font-size:1.25rem;letter-spacing:.3px;}
+  header p{margin:0;font-size:.8rem;opacity:.85;}
+  .wrap{max-width:920px;margin:0 auto;padding:16px;}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .tab-btn{
+    flex:1 1 calc(50% - 8px);min-width:130px;padding:10px;border:none;border-radius:8px 8px 0 0;
+    background:#e4dfd0;color:var(--navy);font-weight:600;cursor:pointer;font-size:.8rem;
+  }
+  .tab-btn.active{background:var(--paper);color:var(--navy);border-bottom:3px solid var(--gold);}
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:18px;margin-bottom:16px;
+  }
+  .section-title{
+    font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--gold);font-weight:700;margin:0 0 12px 0;
+    border-bottom:1px solid var(--line);padding-bottom:6px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  label{display:block;font-size:.82rem;font-weight:600;margin:12px 0 4px 0;color:var(--navy);}
+  input,select,textarea{
+    width:100%;padding:9px 10px;border:1px solid #c9c2ae;border-radius:6px;
+    font-size:.9rem;font-family:inherit;background:#fdfcf9;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.row2{grid-template-columns:1fr;} .tab-btn{flex:1 1 100%;}}
+  .loc-box{
+    background:#f1ede1;border:1px dashed var(--gold);border-radius:8px;
+    padding:12px;margin-top:10px;
+  }
+  #map{height:220px;border-radius:8px;margin-top:10px;display:block;}
+  .btn{
+    display:inline-block;padding:10px 16px;border:none;border-radius:6px;
+    font-weight:700;font-size:.85rem;cursor:pointer;margin-top:8px;
+  }
+  .btn-gold{background:var(--gold);color:#fff;}
+  .btn-navy{background:var(--navy);color:#fff;}
+  .btn-outline{background:#fff;border:1px solid var(--navy);color:var(--navy);}
+  .btn-red{background:var(--red);color:#fff;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .coords{font-size:.8rem;color:var(--green);font-weight:600;margin-top:6px;}
+  .err{font-size:.8rem;color:var(--red);font-weight:600;margin-top:6px;}
+  .loading{font-size:.8rem;color:#888;margin-top:6px;}
+  .addr-auto{
+    font-size:.8rem;background:#eef4f0;border:1px solid #cfe3d6;border-radius:6px;
+    padding:8px 10px;margin-top:8px;color:var(--green);
+  }
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,38,71,.55);
+    z-index:1000;align-items:center;justify-content:center;padding:16px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:#fff;border-radius:10px;padding:18px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700;}
+  .badge-lunas{background:#e2f3e8;color:var(--green);}
+  .badge-sebagian{background:#fbf1dc;color:#8a6414;}
+  .badge-belum{background:#fbe4e1;color:var(--red);}
+  .pay-btn{background:var(--green);color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:.72rem;cursor:pointer;margin-left:4px;}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  @media(max-width:560px){.summary-grid{grid-template-columns:1fr;}}
+  .stat-card{background:#f1ede1;border:1px solid var(--line);border-radius:8px;padding:12px;}
+  .stat-card .stat-label{font-size:.7rem;text-transform:uppercase;color:#777;font-weight:700;}
+  .stat-card .stat-value{font-size:1.15rem;font-weight:700;color:var(--navy);margin-top:2px;}
+  table{width:100%;border-collapse:collapse;font-size:.78rem;}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+  th{background:var(--navy);color:#fff;font-size:.72rem;text-transform:uppercase;}
+  tr:nth-child(even){background:#faf8f2;}
+  .empty{text-align:center;color:#888;padding:30px 0;font-size:.85rem;}
+  .del-btn{background:var(--red);color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:.72rem;cursor:pointer;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .count-badge{background:var(--navy);color:#fff;font-size:.72rem;padding:3px 10px;border-radius:12px;}
+  .toast{
+    position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;
+    font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;
+  }
+  .toast.show{opacity:1;}
+  .table-scroll{overflow-x:auto;}
+  .item-card{
+    background:#f6f4ee;border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+  }
+  .item-card .info{font-size:.8rem;line-height:1.5;}
+  .item-card .info b{color:var(--navy);}
+  .item-card .pajak{color:var(--red);font-weight:700;}
+  .calc-box{
+    background:#eef4f0;border:1px solid #cfe3d6;border-radius:8px;
+    padding:12px;margin-top:12px;font-size:.82rem;
+  }
+  .calc-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #cfe3d6;}
+  .calc-row:last-child{border-bottom:none;font-weight:700;color:var(--red);padding-top:6px;}
+  .total-bar{
+    background:var(--navy);color:#fff;padding:10px 14px;border-radius:8px;
+    display:flex;justify-content:space-between;font-weight:700;margin-top:10px;font-size:.9rem;
+  }
+  select#lapTahun{max-width:160px;}
+  .hint-note{font-size:.72rem;color:#888;margin:4px 0 0;}
+  .tarif-tag{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px;}
+  .tarif-10{background:#e6eef7;color:var(--navy);}
+  .tarif-40{background:#fbe6e2;color:var(--red);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎭 Pendataan Wajib Pajak PBJT Kesenian &amp; Hiburan</h1>
+  <p>BAPENDA Kabupaten Paser — biodata WP + peta alamat otomatis + okupansi otomatis + data potensi + laporan penerimaan, bulanan &amp; tahunan</p>
+  <button id="installBtn" onclick="installApp()" style="display:none;margin-top:10px;background:#c8952c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:.8rem;cursor:pointer;">⬇ Install Aplikasi ke HP</button>
+  <div id="iosInstallHint" style="display:none;margin-top:10px;background:#173763;border:1px solid #2a4a7a;border-radius:6px;padding:10px 12px;font-size:.78rem;line-height:1.5;">
+    📲 <b>Install di iPhone/iPad:</b> ketuk tombol <b>Share/Bagikan</b> (kotak dengan panah ke atas) di Safari, lalu pilih <b>"Add to Home Screen" / "Tambah ke Layar Utama"</b>.
+  </div>
+  <p id="syncStatus" style="font-size:.72rem;font-weight:700;margin-top:4px;"></p>
+</header>
+
+<div class="wrap" id="appRoot" style="display:none;">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('form')" id="tabBtnForm">+ Input Data</button>
+    <button class="tab-btn" onclick="switchTab('list')" id="tabBtnList">📋 Daftar Data</button>
+    <button class="tab-btn" onclick="switchTab('potensi')" id="tabBtnPotensi">📈 Data Potensi</button>
+    <button class="tab-btn" onclick="switchTab('penerimaan')" id="tabBtnPenerimaan">💰 Laporan Penerimaan</button>
+    <button class="tab-btn" onclick="switchTab('bulanan')" id="tabBtnBulanan">🗓️ Laporan Bulanan</button>
+    <button class="tab-btn" onclick="switchTab('tahunan')" id="tabBtnTahunan">📆 Laporan Tahunan</button>
+  </div>
+
+  <!-- FORM TAB -->
+  <div id="tabForm">
+    <div class="card">
+      <p class="section-title">Data Wajib Pajak</p>
+      <div class="row2">
+        <div>
+          <label>Nama Wajib Pajak / Pemilik</label>
+          <input type="text" id="fNama" placeholder="Contoh: Siti Aminah">
+        </div>
+        <div>
+          <label>NIK KTP</label>
+          <input type="text" id="fNik" maxlength="16" inputmode="numeric" placeholder="16 digit sesuai KTP">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>Nama Usaha</label>
+          <input type="text" id="fBadanUsaha" placeholder="Contoh: Karaoke Melodi Paser">
+        </div>
+        <div>
+          <label>NPWPD (jika ada)</label>
+          <input type="text" id="fNpwpd" placeholder="Nomor Pokok Wajib Pajak Daerah">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>No. HP / Kontak</label>
+          <input type="text" id="fHp" placeholder="08xx-xxxx-xxxx">
+        </div>
+        <div>
+          <label>Nama Petugas Survei</label>
+          <input type="text" id="fPetugas" placeholder="Nama petugas yang input data ini">
+        </div>
+      </div>
+      <label>Kecamatan / Desa-Kelurahan</label>
+      <input type="text" id="fKec" placeholder="Contoh: Tanah Grogot">
+      <label>Alamat / Lokasi Usaha <span style="color:#888;font-weight:400;">(terisi otomatis dari peta)</span></label>
+      <textarea id="fAlamat" placeholder="Ketuk/geser peta di bawah untuk mengisi otomatis, atau ketik manual"></textarea>
+
+      <div class="loc-box">
+        <label style="margin-top:0;">📍 Titik Lokasi Usaha</label>
+        <p style="font-size:.82rem;color:#555;margin:0 0 8px 0;"><strong>Ketuk titik di peta</strong> atau geser pin — alamat akan otomatis dicari dan diisikan ke kolom alamat di atas.</p>
+        <div class="row2">
+          <div>
+            <label style="margin-top:0;">Latitude (manual)</label>
+            <input type="number" id="fLatManual" step="0.000001" placeholder="Contoh: -1.945600" oninput="applyManualCoords()">
+          </div>
+          <div>
+            <label style="margin-top:0;">Longitude (manual)</label>
+            <input type="number" id="fLngManual" step="0.000001" placeholder="Contoh: 116.193700" oninput="applyManualCoords()">
+          </div>
+        </div>
+        <div id="locStatus"></div>
+        <div id="map"></div>
+        <button type="button" class="btn btn-outline" style="margin-top:8px;" onclick="getLocation()">📡 Ambil Lokasi GPS Saya Sekarang</button>
+        <p class="hint-note">Alamat otomatis memakai layanan OpenStreetMap (Nominatim) — perlu koneksi internet. Hasilnya perkiraan; sesuaikan manual bila kurang tepat.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-title">Data Objek Pajak PBJT Kesenian &amp; Hiburan <span style="color:#888;font-weight:400;text-transform:none;">(bisa lebih dari 1 jenis/periode per WP)</span></p>
+      <div class="row2">
+        <div>
+          <label>Periode Laporan (Bulan)</label>
+          <input type="month" id="fPeriode">
+        </div>
+        <div>
+          <label>Jenis Jasa Kesenian &amp; Hiburan</label>
+          <select id="fJenis" onchange="onJenisChange()"></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>Omzet Bruto (Rp) <span style="color:#888;font-weight:400;">— dasar pengenaan pajak</span></label>
+          <input type="number" id="fOmzet" min="0" step="1000" placeholder="Contoh: 15000000" oninput="recalcPreview()">
+        </div>
+        <div>
+          <label>Tarif Pajak (%) <span id="tarifSumber" style="color:#888;font-weight:400;"></span></label>
+          <input type="number" id="fTarif" min="0" max="100" step="0.1" oninput="recalcPreview()">
+        </div>
+      </div>
+
+      <div class="loc-box" style="margin-top:14px;">
+        <label style="margin-top:0;">🎯 Okupansi / Tingkat Pemakaian (Otomatis) <span style="color:#888;font-weight:400;">— opsional, untuk cross-check omzet</span></label>
+        <p style="font-size:.78rem;color:#555;margin:0 0 8px 0;">Isi jika objek punya unit/ruang/kursi terhitung (karaoke, spa, bioskop, wahana, dll). Okupansi dihitung otomatis dan bisa dibandingkan dengan omzet yang dilaporkan WP.</p>
+        <div class="row2">
+          <div>
+            <label style="margin-top:0;">Kapasitas / Jumlah Unit Tersedia</label>
+            <input type="number" id="fKapasitas" min="0" step="1" placeholder="Contoh: 8 ruang karaoke" oninput="recalcPreview()">
+          </div>
+          <div>
+            <label style="margin-top:0;">Rata-rata Unit Terpakai / Hari</label>
+            <input type="number" id="fUnitTerpakai" min="0" step="0.1" placeholder="Contoh: 5 ruang/hari" oninput="recalcPreview()">
+          </div>
+        </div>
+        <label style="margin-top:10px;">Jumlah Hari Operasional dalam Periode</label>
+        <input type="number" id="fHariOperasional" min="0" max="31" step="1" placeholder="Contoh: 30" oninput="recalcPreview()">
+      </div>
+
+      <div class="calc-box" id="calcBox" style="display:none;"></div>
+
+      <button type="button" class="btn btn-gold" onclick="addItem()">+ Tambah Data Objek ke Daftar</button>
+
+      <div id="itemList" style="margin-top:14px;"></div>
+      <div id="wpTotalBar"></div>
+    </div>
+
+    <div class="card">
+      <p class="section-title">Catatan &amp; Tanggal</p>
+      <label>Catatan Lapangan</label>
+      <textarea id="fCatatan" placeholder="Kondisi lokasi usaha, kendala pendataan, dsb."></textarea>
+      <label>Tanggal Survei</label>
+      <input type="date" id="fTanggal">
+
+      <div class="actions">
+        <button class="btn btn-navy" onclick="saveEntry()">💾 Simpan Data Wajib Pajak Ini</button>
+        <button class="btn btn-outline" onclick="resetForm()">Bersihkan Semua Form</button>
+      </div>
+    </div>
+    <p style="font-size:.72rem;color:#888;text-align:center;">Rumus: Pajak Terutang = Omzet Bruto (Dasar Pengenaan Pajak) × Tarif Pajak. Dasar hukum: Perda PBJT Kabupaten Paser Pasal 23 (jenis jasa kesenian &amp; hiburan) &amp; Pasal 27 (tarif 10%, khusus diskotek/karaoke/kelab malam/bar/mandi uap-spa sebesar 40%).</p>
+  </div>
+
+  <!-- LIST TAB -->
+  <div id="tabList" style="display:none;">
+    <div class="card">
+      <div class="toolbar">
+        <span class="count-badge" id="countBadge">0 WP</span>
+        <div class="actions" style="margin:0;">
+          <button class="btn btn-gold" onclick="exportExcel()">⬇ Export Excel</button>
+        </div>
+      </div>
+      <p style="font-size:.75rem;color:#888;margin:0 0 10px 0;">💾 Data tersimpan <strong>di HP masing-masing</strong>. Kalau tim lapangan lebih dari 1 orang, tiap petugas <strong>Export Excel</strong> di akhir hari, lalu digabung manual.</p>
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Nama WP</th>
+              <th>Usaha</th>
+              <th>Periode</th>
+              <th>Jenis Jasa</th>
+              <th>Tarif</th>
+              <th>Omzet</th>
+              <th>Pajak Terutang</th>
+              <th>Okupansi</th>
+              <th>Status Bayar</th>
+              <th>Lokasi</th>
+              <th>Tanggal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="dataBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyMsg" class="empty" style="display:none;">Belum ada data yang tersimpan.</div>
+      <div class="total-bar" id="grandTotalBar" style="display:none;">
+        <span>TOTAL POTENSI PAJAK KESENIAN &amp; HIBURAN</span>
+        <span id="grandTotalValue">Rp 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA POTENSI TAB -->
+  <div id="tabPotensi" style="display:none;">
+    <div class="card">
+      <p class="section-title">Data Potensi Pajak Kesenian &amp; Hiburan</p>
+      <p style="font-size:.78rem;color:#666;margin:0 0 12px 0;">Rekap potensi pajak per Wajib Pajak (seluruh periode yang terdata) beserta rata-rata okupansi, untuk pemetaan potensi penerimaan daerah.</p>
+      <div class="summary-grid">
+        <div class="stat-card"><div class="stat-label">Jumlah WP Terdata</div><div class="stat-value" id="potWpCount">0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Potensi Pajak</div><div class="stat-value" id="potTotalValue">Rp 0</div></div>
+      </div>
+      <div class="toolbar">
+        <div>
+          <label style="margin:0 0 4px 0;">Filter Kecamatan</label>
+          <select id="potKecFilter" onchange="renderPotensi()"><option value="">Semua Kecamatan</option></select>
+        </div>
+        <div class="actions" style="margin:0;">
+          <button class="btn btn-gold" onclick="exportPotensiExcel()">⬇ Export Excel</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Nama WP</th><th>Usaha</th><th>Kecamatan</th><th>Jml Objek</th><th>Rata2 Okupansi</th><th>Total Potensi Pajak</th></tr></thead>
+          <tbody id="potensiBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyPotensi" class="empty" style="display:none;">Belum ada data.</div>
+    </div>
+  </div>
+
+  <!-- LAPORAN PENERIMAAN TAB -->
+  <div id="tabPenerimaan" style="display:none;">
+    <div class="card">
+      <p class="section-title">Laporan Penerimaan (Realisasi Pembayaran)</p>
+      <p style="font-size:.78rem;color:#666;margin:0 0 12px 0;">Catat pembayaran lewat tombol "💰 Bayar" di tab Daftar Data. Rekap ini membandingkan Ketetapan (potensi pajak per periode) dengan Realisasi (jumlah diterima).</p>
+      <div class="toolbar">
+        <div>
+          <label style="margin:0 0 4px 0;">Tahun</label>
+          <select id="penTahun" onchange="renderPenerimaan()"></select>
+        </div>
+        <div class="actions" style="margin:0;">
+          <button class="btn btn-gold" onclick="exportPenerimaanExcel()">⬇ Export Excel</button>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <div class="stat-card"><div class="stat-label">Total Ketetapan</div><div class="stat-value" id="penKetetapanValue">Rp 0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Diterima</div><div class="stat-value" id="penDiterimaValue">Rp 0</div></div>
+        <div class="stat-card"><div class="stat-label">Sisa Piutang</div><div class="stat-value" id="penPiutangValue">Rp 0</div></div>
+        <div class="stat-card"><div class="stat-label">% Capaian</div><div class="stat-value" id="penCapaianValue">0%</div></div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Bulan</th><th>Ketetapan</th><th>Diterima</th><th>Piutang</th><th>% Capaian</th></tr></thead>
+          <tbody id="penerimaanBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyPenerimaan" class="empty" style="display:none;">Belum ada data untuk tahun ini.</div>
+      <p class="section-title" style="margin-top:18px;">Rincian per Wajib Pajak</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Nama WP</th><th>Periode</th><th>Ketetapan</th><th>Status</th><th>Diterima</th><th>Tgl Bayar</th></tr></thead>
+          <tbody id="penerimaanDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAPORAN BULANAN TAB -->
+  <div id="tabBulanan" style="display:none;">
+    <div class="card">
+      <p class="section-title">Laporan Bulanan</p>
+      <div class="toolbar">
+        <div>
+          <label style="margin:0 0 4px 0;">Tahun</label>
+          <select id="lapTahun" onchange="renderBulanan()"></select>
+        </div>
+        <div class="actions" style="margin:0;">
+          <button class="btn btn-gold" onclick="exportBulananExcel()">⬇ Export Excel</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Bulan</th><th>Jumlah Laporan</th><th>Total Omzet</th><th>Total Pajak</th></tr>
+          </thead>
+          <tbody id="bulananBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyBulanan" class="empty" style="display:none;">Belum ada data untuk tahun ini.</div>
+      <div class="total-bar" id="bulananTotalBar" style="display:none;">
+        <span>TOTAL PAJAK TAHUN INI</span>
+        <span id="bulananTotalValue">Rp 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAPORAN TAHUNAN TAB -->
+  <div id="tabTahunan" style="display:none;">
+    <div class="card">
+      <p class="section-title">Laporan Tahunan</p>
+      <div class="toolbar">
+        <span class="count-badge" id="tahunanCountBadge">0 Tahun</span>
+        <div class="actions" style="margin:0;">
+          <button class="btn btn-gold" onclick="exportTahunanExcel()">⬇ Export Excel</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Tahun</th><th>Jumlah Laporan</th><th>Total Omzet</th><th>Total Pajak</th></tr>
+          </thead>
+          <tbody id="tahunanBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyTahunan" class="empty" style="display:none;">Belum ada data yang bisa direkap.</div>
+      <div class="total-bar" id="tahunanTotalBar" style="display:none;">
+        <span>TOTAL PAJAK SEMUA TAHUN</span>
+        <span id="tahunanTotalValue">Rp 0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PEMBAYARAN -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal-box">
+    <p class="section-title">💰 Catat Pembayaran</p>
+    <div id="payModalInfo" style="font-size:.82rem;margin-bottom:10px;line-height:1.5;"></div>
+    <label style="margin-top:0;">Tanggal Bayar</label>
+    <input type="date" id="payTanggal">
+    <label>Jumlah Diterima (Rp)</label>
+    <input type="number" id="payJumlah" min="0" step="1">
+    <label>Status</label>
+    <select id="payStatus">
+      <option value="Lunas">Lunas</option>
+      <option value="Sebagian">Sebagian</option>
+      <option value="Belum Bayar">Belum Bayar</option>
+    </select>
+    <label>Keterangan / No. Bukti Setor</label>
+    <input type="text" id="payKet" placeholder="No. SSPD / bukti setor, dsb.">
+    <div class="actions">
+      <button class="btn btn-navy" onclick="savePayment()">💾 Simpan</button>
+      <button class="btn btn-outline" onclick="closePayModal()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN GATE -->
+<div class="modal-overlay" id="loginGate" style="z-index:2000;">
+  <div class="modal-box">
+    <p class="section-title">🔒 Login Petugas</p>
+    <p style="font-size:.8rem;color:#666;margin:0 0 10px 0;">Aplikasi ini khusus untuk petugas BAPENDA Kabupaten Paser. Masukkan password kantor untuk melanjutkan.</p>
+    <label style="margin-top:0;">Password Kantor</label>
+    <input type="password" id="loginPassword" placeholder="Masukkan password" onkeydown="if(event.key==='Enter') doLogin();">
+    <div id="loginError" class="err" style="display:none;margin-top:8px;"></div>
+    <div class="actions">
+      <button class="btn btn-navy" onclick="doLogin()" id="loginBtn">🔓 Masuk</button>
+    </div>
+    <p id="offlineNotice" style="display:none;font-size:.75rem;color:#888;margin-top:10px;">⚠ Tidak ada koneksi internet. Login pertama kali butuh koneksi internet; setelah itu bisa dipakai offline.</p>
+    <p id="notConfiguredNotice" style="display:none;font-size:.75rem;color:#888;margin-top:10px;">ℹ Sinkronisasi cloud belum dikonfigurasi — aplikasi berjalan mode lokal (data hanya tersimpan di HP ini).</p>
+  </div>
+</div>
+
+<!-- NAME GATE -->
+<div class="modal-overlay" id="nameGate" style="z-index:2000;">
+  <div class="modal-box">
+    <p class="section-title">👤 Nama Petugas</p>
+    <p style="font-size:.8rem;color:#666;margin:0 0 10px 0;">Isi nama Anda sekali saja. Nama ini dipakai untuk menandai data yang Anda input di HP ini, dan hanya data dengan nama ini yang akan tampil di HP ini.</p>
+    <label style="margin-top:0;">Nama Petugas</label>
+    <input type="text" id="petugasNamaInput" placeholder="Nama lengkap petugas" onkeydown="if(event.key==='Enter') savePetugasNama();">
+    <div class="actions">
+      <button class="btn btn-navy" onclick="savePetugasNama()">✔ Simpan &amp; Lanjut</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= KONFIGURASI SUPABASE (WAJIB DIISI) =================
+// Ambil dari Supabase Project > Settings > API. Lihat panduan setup lengkap
+// dari asisten yang membuatkan aplikasi ini.
+const SUPABASE_URL = 'ISI_PROJECT_URL_ANDA';        // contoh: https://abcdefgh.supabase.co
+const SUPABASE_ANON_KEY = 'ISI_ANON_PUBLIC_KEY_ANDA';
+const SUPABASE_TABLE = 'kesenian_hiburan_entries';
+const SHARED_LOGIN_EMAIL = 'petugas@bapenda-paser.local'; // jangan diubah kecuali email akun bersama di Supabase Auth ikut diubah
+// =========================================================================
+const SUPABASE_CONFIGURED = !SUPABASE_URL.includes('ISI_') && !SUPABASE_ANON_KEY.includes('ISI_');
+const sbClient = SUPABASE_CONFIGURED ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let petugasNama = localStorage.getItem('petugasNama') || '';
+</script>
+
+<script>
+// ===================== PARAMETER PBJT KESENIAN & HIBURAN (Perda PBJT Kab. Paser) =====================
+// Pasal 23: Jenis Jasa Kesenian dan Hiburan
+// Pasal 27: Tarif PBJT = 10% (umum), khusus diskotek/karaoke/kelab malam/bar/mandi uap-spa = 40%
+const TARIF_UMUM = 10;
+const TARIF_KHUSUS = 40;
+
+// jenis: { label, tarif }
+const JENIS_KESENIAN_HIBURAN = [
+  { label: "a. Tontonan Film / Tontonan Audio Visual Lainnya", tarif: TARIF_UMUM },
+  { label: "b. Pergelaran Kesenian, Musik, Tari, dan/atau Busana", tarif: TARIF_UMUM },
+  { label: "c. Kontes Kecantikan", tarif: TARIF_UMUM },
+  { label: "d. Kontes Binaraga", tarif: TARIF_UMUM },
+  { label: "e. Pameran", tarif: TARIF_UMUM },
+  { label: "f. Pertunjukan Sirkus, Akrobat, dan Sulap", tarif: TARIF_UMUM },
+  { label: "g. Pacuan Kuda dan Perlombaan Kendaraan Bermotor", tarif: TARIF_UMUM },
+  { label: "h. Permainan Ketangkasan", tarif: TARIF_UMUM },
+  { label: "i. Olahraga Permainan (Tempat/Ruang & Peralatan Olahraga-Kebugaran)", tarif: TARIF_UMUM },
+  { label: "j. Rekreasi Wahana (Air/Ekologi/Pendidikan/Budaya/Salju/Permainan), Pemancingan, Agrowisata, Kebun Binatang", tarif: TARIF_UMUM },
+  { label: "k. Panti Pijat dan Pijat Refleksi", tarif: TARIF_UMUM },
+  { label: "l. Diskotek", tarif: TARIF_KHUSUS },
+  { label: "l. Karaoke", tarif: TARIF_KHUSUS },
+  { label: "l. Kelab Malam", tarif: TARIF_KHUSUS },
+  { label: "l. Bar", tarif: TARIF_KHUSUS },
+  { label: "l. Mandi Uap / Spa", tarif: TARIF_KHUSUS }
+];
+
+let currentLat = null, currentLng = null;
+let map = null, marker = null;
+let entries = [];
+let currentItems = [];
+let geocodeTimer = null;
+let payTarget = null; // {entryId, itemIdx} untuk modal pencatatan pembayaran
+
+function switchTab(tab){
+  document.getElementById('tabForm').style.display = tab==='form' ? 'block':'none';
+  document.getElementById('tabList').style.display = tab==='list' ? 'block':'none';
+  document.getElementById('tabPotensi').style.display = tab==='potensi' ? 'block':'none';
+  document.getElementById('tabPenerimaan').style.display = tab==='penerimaan' ? 'block':'none';
+  document.getElementById('tabBulanan').style.display = tab==='bulanan' ? 'block':'none';
+  document.getElementById('tabTahunan').style.display = tab==='tahunan' ? 'block':'none';
+  document.getElementById('tabBtnForm').classList.toggle('active', tab==='form');
+  document.getElementById('tabBtnList').classList.toggle('active', tab==='list');
+  document.getElementById('tabBtnPotensi').classList.toggle('active', tab==='potensi');
+  document.getElementById('tabBtnPenerimaan').classList.toggle('active', tab==='penerimaan');
+  document.getElementById('tabBtnBulanan').classList.toggle('active', tab==='bulanan');
+  document.getElementById('tabBtnTahunan').classList.toggle('active', tab==='tahunan');
+  if(tab==='list') renderTable();
+  if(tab==='potensi') renderPotensi();
+  if(tab==='penerimaan') renderPenerimaan();
+  if(tab==='bulanan') renderBulanan();
+  if(tab==='tahunan') renderTahunan();
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function formatRupiah(n){
+  if(isNaN(n)) return 'Rp 0';
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+
+function bulanNama(m){
+  const names = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  return names[m];
+}
+
+function populateJenisSelect(){
+  const sel = document.getElementById('fJenis');
+  sel.innerHTML = JENIS_KESENIAN_HIBURAN.map((j,idx)=>`<option value="${idx}">${j.label} (${j.tarif}%)</option>`).join('');
+}
+
+function onJenisChange(){
+  const idx = parseInt(document.getElementById('fJenis').value,10);
+  const jenis = JENIS_KESENIAN_HIBURAN[idx];
+  const tarifField = document.getElementById('fTarif');
+  const sumberLabel = document.getElementById('tarifSumber');
+  tarifField.value = jenis.tarif;
+  sumberLabel.textContent = jenis.tarif === TARIF_KHUSUS ? '(khusus Pasal 27 ayat 2)' : '(umum Pasal 27 ayat 1)';
+  recalcPreview();
+}
+
+// ----- perhitungan item -----
+function readCurrentItemInputs(){
+  return {
+    periode: document.getElementById('fPeriode').value,
+    jenisIdx: document.getElementById('fJenis').value,
+    omzet: document.getElementById('fOmzet').value,
+    tarif: document.getElementById('fTarif').value,
+    kapasitas: document.getElementById('fKapasitas').value,
+    unitTerpakai: document.getElementById('fUnitTerpakai').value,
+    hariOperasional: document.getElementById('fHariOperasional').value
+  };
+}
+
+function calcItemValues(omzet, tarifPersen, kapasitas, unitTerpakai, hariOperasional){
+  const omzetNum = parseFloat(omzet) || 0;
+  const tarifNum = parseFloat(tarifPersen);
+  const tarif = isNaN(tarifNum) ? TARIF_UMUM : tarifNum;
+  const pajakTerutang = omzetNum * (tarif/100);
+  const kapasitasNum = parseFloat(kapasitas) || 0;
+  const unitTerpakaiNum = parseFloat(unitTerpakai) || 0;
+  const hariNum = parseFloat(hariOperasional) || 0;
+  let okupansi = null;
+  if(kapasitasNum > 0){
+    okupansi = Math.min(100, (unitTerpakaiNum / kapasitasNum) * 100);
+  }
+  return {
+    omzet: omzetNum, tarifPajak: tarif, pajakTerutang,
+    kapasitas: kapasitasNum, unitTerpakai: unitTerpakaiNum, hariOperasional: hariNum,
+    okupansi
+  };
+}
+
+function recalcPreview(){
+  const d = readCurrentItemInputs();
+  const box = document.getElementById('calcBox');
+  if(!d.omzet){
+    box.style.display = 'none';
+    return;
+  }
+  const r = calcItemValues(d.omzet, d.tarif, d.kapasitas, d.unitTerpakai, d.hariOperasional);
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="calc-row"><span>Omzet Bruto (Dasar Pengenaan Pajak)</span><span>${formatRupiah(r.omzet)}</span></div>
+    <div class="calc-row"><span>Tarif Pajak</span><span>${r.tarifPajak}%</span></div>
+    ${r.okupansi !== null ? `<div class="calc-row"><span>🎯 Okupansi Rata-rata (otomatis)</span><span>${r.okupansi.toFixed(1)}%</span></div>` : ''}
+    <div class="calc-row"><span>PAJAK TERUTANG</span><span>${formatRupiah(r.pajakTerutang)}</span></div>
+  `;
+}
+
+function addItem(){
+  const d = readCurrentItemInputs();
+  if(!d.periode){
+    showToast('⚠️ Pilih periode laporan dulu.');
+    return;
+  }
+  if(!d.omzet){
+    showToast('⚠️ Isi omzet bruto dulu.');
+    return;
+  }
+  const jenis = JENIS_KESENIAN_HIBURAN[parseInt(d.jenisIdx,10)];
+  const calc = calcItemValues(d.omzet, d.tarif, d.kapasitas, d.unitTerpakai, d.hariOperasional);
+
+  currentItems.push({
+    periode: d.periode,
+    jenisLabel: jenis.label,
+    calc: calc
+  });
+  renderItemList();
+
+  document.getElementById('fPeriode').value = '';
+  document.getElementById('fOmzet').value = '';
+  document.getElementById('fKapasitas').value = '';
+  document.getElementById('fUnitTerpakai').value = '';
+  document.getElementById('fHariOperasional').value = '';
+  document.getElementById('fJenis').selectedIndex = 0;
+  document.getElementById('calcBox').style.display = 'none';
+  onJenisChange();
+  showToast('✔ Data objek ditambahkan (' + currentItems.length + ')');
+}
+
+function removeItem(idx){
+  currentItems.splice(idx, 1);
+  renderItemList();
+}
+
+function formatPeriode(p){
+  if(!p) return '-';
+  const [y,m] = p.split('-');
+  return bulanNama(parseInt(m,10)-1) + ' ' + y;
+}
+
+function renderItemList(){
+  const box = document.getElementById('itemList');
+  const totalBar = document.getElementById('wpTotalBar');
+  if(currentItems.length === 0){
+    box.innerHTML = '';
+    totalBar.innerHTML = '';
+    return;
+  }
+  box.innerHTML = currentItems.map((it, idx) => `
+    <div class="item-card">
+      <div class="info">
+        <b>${idx+1}. ${escapeHtml(it.jenisLabel)}</b> — ${formatPeriode(it.periode)}<br>
+        Omzet: ${formatRupiah(it.calc.omzet)} · Tarif Pajak: ${it.calc.tarifPajak}%${it.calc.okupansi !== null ? ' · Okupansi: '+it.calc.okupansi.toFixed(1)+'%' : ''}<br>
+        <span class="pajak">Pajak: ${formatRupiah(it.calc.pajakTerutang)}</span>
+      </div>
+      <button type="button" class="del-btn" onclick="removeItem(${idx})">Hapus</button>
+    </div>
+  `).join('');
+  const total = currentItems.reduce((s,it)=>s+it.calc.pajakTerutang, 0);
+  totalBar.innerHTML = `<div class="total-bar"><span>Total Pajak WP Ini</span><span>${formatRupiah(total)}</span></div>`;
+}
+
+function escapeHtml(str){
+  if(!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ----- peta, GPS, & alamat otomatis (reverse geocoding) -----
+function initMap(){
+  const defaultLat = -1.9456, defaultLng = 116.1937;
+  map = L.map('map').setView([defaultLat, defaultLng], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'© OpenStreetMap'
+  }).addTo(map);
+
+  marker = L.marker([defaultLat, defaultLng], {draggable:true}).addTo(map);
+  marker.on('dragend', function(e){
+    const p = marker.getLatLng();
+    setCoords(p.lat, p.lng, 'geser pin');
+  });
+
+  map.on('click', function(e){
+    setCoords(e.latlng.lat, e.latlng.lng, 'ketuk peta');
+    marker.setLatLng(e.latlng);
+  });
+}
+
+function setCoords(lat, lng, source){
+  currentLat = lat;
+  currentLng = lng;
+  document.getElementById('fLatManual').value = lat.toFixed(6);
+  document.getElementById('fLngManual').value = lng.toFixed(6);
+  document.getElementById('locStatus').innerHTML = `<div class="coords">✔ Koordinat (${source}): ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
+  scheduleReverseGeocode(lat, lng);
+}
+
+function scheduleReverseGeocode(lat, lng){
+  clearTimeout(geocodeTimer);
+  const status = document.getElementById('locStatus');
+  status.innerHTML += '<div class="loading" id="geoLoading">⏳ Mencari alamat otomatis...</div>';
+  geocodeTimer = setTimeout(()=> reverseGeocode(lat, lng), 600);
+}
+
+async function reverseGeocode(lat, lng){
+  try{
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'id' } });
+    if(!res.ok) throw new Error('gagal fetch');
+    const data = await res.json();
+    const loadingEl = document.getElementById('geoLoading');
+    if(loadingEl) loadingEl.remove();
+    if(data && data.display_name){
+      document.getElementById('fAlamat').value = data.display_name;
+      const a = data.address || {};
+      if(!document.getElementById('fKec').value){
+        document.getElementById('fKec').value = a.suburb || a.village || a.town || a.county || a.city_district || '';
+      }
+      document.getElementById('locStatus').innerHTML += `<div class="addr-auto">📍 Alamat otomatis: ${escapeHtml(data.display_name)}</div>`;
+    } else {
+      document.getElementById('locStatus').innerHTML += '<div class="err">Alamat tidak ditemukan untuk titik ini — isi manual.</div>';
+    }
+  }catch(e){
+    const loadingEl = document.getElementById('geoLoading');
+    if(loadingEl) loadingEl.remove();
+    document.getElementById('locStatus').innerHTML += '<div class="err">Gagal mengambil alamat otomatis (cek koneksi internet) — isi manual.</div>';
+  }
+}
+
+function applyManualCoords(){
+  const lat = parseFloat(document.getElementById('fLatManual').value);
+  const lng = parseFloat(document.getElementById('fLngManual').value);
+  if(isNaN(lat) || isNaN(lng)) return;
+  currentLat = lat;
+  currentLng = lng;
+  marker.setLatLng([lat, lng]);
+  map.setView([lat, lng], 17);
+  document.getElementById('locStatus').innerHTML = `<div class="coords">✔ Koordinat (input manual): ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
+  scheduleReverseGeocode(lat, lng);
+}
+
+function getLocation(){
+  const status = document.getElementById('locStatus');
+  if(!navigator.geolocation){
+    status.innerHTML = '<div class="err">Perangkat/browser ini tidak mendukung GPS otomatis. Silakan ketuk lokasi langsung di peta atau ketik manual.</div>';
+    return;
+  }
+  status.innerHTML = '<div class="loading">⏳ Mencoba ambil lokasi GPS...</div>';
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{
+      showMap(pos.coords.latitude, pos.coords.longitude);
+      setCoords(pos.coords.latitude, pos.coords.longitude, 'GPS otomatis ±' + Math.round(pos.coords.accuracy) + 'm');
+    },
+    ()=>{
+      status.innerHTML = '<div class="err">GPS otomatis tidak tersedia — cukup ketuk titik lokasinya di peta atau ketik manual di atas.</div>';
+    },
+    { enableHighAccuracy:true, timeout:8000 }
+  );
+}
+
+function showMap(lat, lng){
+  map.setView([lat,lng], 17);
+  marker.setLatLng([lat,lng]);
+  setTimeout(()=>map.invalidateSize(), 200);
+}
+
+// ----- penyimpanan -----
+function loadEntries(){
+  try{
+    const raw = localStorage.getItem('wp-kesenian-hiburan-entries-v1');
+    entries = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    console.error('Gagal load data', e);
+    entries = [];
+  }
+}
+
+function persistLocalOnly(){
+  try{
+    localStorage.setItem('wp-kesenian-hiburan-entries-v1', JSON.stringify(entries));
+  }catch(e){
+    console.error('Gagal menyimpan', e);
+    showToast('⚠️ Gagal menyimpan data. Memori penyimpanan mungkin penuh.');
+  }
+}
+
+function persistEntries(){
+  persistLocalOnly();
+  syncAllToCloud();
+}
+
+// ================= AUTH & SYNC (Supabase) =================
+async function checkAuthAndStart(){
+  if(!SUPABASE_CONFIGURED){
+    document.getElementById('notConfiguredNotice').style.display = 'block';
+    document.getElementById('loginGate').classList.add('show');
+    return;
+  }
+  try{
+    const { data: { session } } = await sbClient.auth.getSession();
+    if(session){
+      afterLoginSuccess();
+    } else {
+      document.getElementById('loginGate').classList.add('show');
+    }
+  }catch(e){
+    console.error('Gagal cek sesi login', e);
+    document.getElementById('loginGate').classList.add('show');
+  }
+}
+
+async function doLogin(){
+  const errBox = document.getElementById('loginError');
+  errBox.style.display = 'none';
+  if(!SUPABASE_CONFIGURED){
+    document.getElementById('loginGate').classList.remove('show');
+    afterLoginSuccessLocalOnly();
+    return;
+  }
+  const pw = document.getElementById('loginPassword').value;
+  if(!pw){ return; }
+  if(!navigator.onLine){
+    document.getElementById('offlineNotice').style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Memeriksa...';
+  try{
+    const { data, error } = await sbClient.auth.signInWithPassword({ email: SHARED_LOGIN_EMAIL, password: pw });
+    if(error) throw error;
+    document.getElementById('loginGate').classList.remove('show');
+    afterLoginSuccess();
+  }catch(e){
+    errBox.textContent = 'Password salah, atau akun belum disiapkan admin di Supabase.';
+    errBox.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = '🔓 Masuk';
+  }
+}
+
+function afterLoginSuccess(){
+  document.getElementById('loginGate').classList.remove('show');
+  if(!petugasNama){
+    document.getElementById('nameGate').classList.add('show');
+  } else {
+    startAppAfterAuth();
+  }
+}
+
+function afterLoginSuccessLocalOnly(){
+  if(!petugasNama){
+    document.getElementById('nameGate').classList.add('show');
+  } else {
+    startAppAfterAuth();
+  }
+}
+
+function savePetugasNama(){
+  const v = document.getElementById('petugasNamaInput').value.trim();
+  if(!v) return;
+  petugasNama = v;
+  localStorage.setItem('petugasNama', v);
+  document.getElementById('nameGate').classList.remove('show');
+  startAppAfterAuth();
+}
+
+function startAppAfterAuth(){
+  document.getElementById('appRoot').style.display = 'block';
+  if(typeof map !== 'undefined' && map) setTimeout(()=> map.invalidateSize(), 100);
+  syncFromCloud();
+}
+
+async function syncFromCloud(){
+  if(!SUPABASE_CONFIGURED || !petugasNama) return;
+  try{
+    const { data, error } = await sbClient
+      .from(SUPABASE_TABLE)
+      .select('id, data')
+      .eq('petugas_nama', petugasNama);
+    if(error) throw error;
+    if(data){
+      entries = data.map(r => r.data);
+      persistLocalOnly();
+      renderTable();
+    }
+    updateSyncStatus(true);
+  }catch(e){
+    console.error('Gagal sync dari cloud', e);
+    updateSyncStatus(false);
+  }
+}
+
+async function syncAllToCloud(){
+  if(!SUPABASE_CONFIGURED || !petugasNama) return;
+  try{
+    if(entries.length){
+      const rows = entries.map(e => ({
+        id: e.id, petugas_nama: petugasNama, data: e, updated_at: new Date().toISOString()
+      }));
+      const { error } = await sbClient.from(SUPABASE_TABLE).upsert(rows);
+      if(error) throw error;
+    }
+    updateSyncStatus(true);
+  }catch(e){
+    console.error('Gagal sync ke cloud', e);
+    updateSyncStatus(false);
+  }
+}
+
+async function deleteEntryFromCloud(id){
+  if(!SUPABASE_CONFIGURED) return;
+  try{
+    await sbClient.from(SUPABASE_TABLE).delete().eq('id', id);
+  }catch(e){
+    console.error('Gagal hapus di cloud', e);
+  }
+}
+
+function updateSyncStatus(ok){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  if(!SUPABASE_CONFIGURED){
+    el.textContent = '💾 Mode lokal (belum sinkron cloud)';
+    el.style.color = '#c8952c';
+    return;
+  }
+  el.textContent = ok ? '☁ Tersinkron' : '⚠ Offline — tersimpan lokal, akan sinkron nanti';
+  el.style.color = ok ? '#bcd7c5' : '#f0c987';
+}
+
+function saveEntry(){
+  const nama = document.getElementById('fNama').value.trim();
+  if(!nama){
+    showToast('⚠️ Nama wajib pajak harus diisi.');
+    document.getElementById('fNama').focus();
+    return;
+  }
+  const periodeNow = document.getElementById('fPeriode').value;
+  const omzetNow = document.getElementById('fOmzet').value;
+  if(periodeNow && omzetNow){
+    addItem();
+  }
+  if(currentItems.length === 0){
+    showToast('⚠️ Tambahkan minimal 1 data objek pajak dulu.');
+    return;
+  }
+
+  const entry = {
+    id: Date.now().toString(),
+    nama,
+    nik: document.getElementById('fNik').value.trim(),
+    badanUsaha: document.getElementById('fBadanUsaha').value.trim(),
+    npwpd: document.getElementById('fNpwpd').value.trim(),
+    hp: document.getElementById('fHp').value.trim(),
+    petugas: document.getElementById('fPetugas').value.trim(),
+    kecamatan: document.getElementById('fKec').value.trim(),
+    alamat: document.getElementById('fAlamat').value.trim(),
+    lat: currentLat,
+    lng: currentLng,
+    catatan: document.getElementById('fCatatan').value.trim(),
+    tanggal: document.getElementById('fTanggal').value,
+    items: currentItems.slice()
+  };
+  entries.unshift(entry);
+  persistEntries();
+  const totalPajak = entry.items.reduce((s,it)=>s+it.calc.pajakTerutang,0);
+  showToast('✔ Data WP tersimpan · ' + entry.items.length + ' objek · ' + formatRupiah(totalPajak));
+  resetForm();
+  switchTab('list');
+}
+
+function resetForm(){
+  ['fNama','fNik','fBadanUsaha','fNpwpd','fHp','fPetugas','fKec','fAlamat','fCatatan','fTanggal',
+   'fPeriode','fOmzet','fLatManual','fLngManual'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fJenis').selectedIndex = 0;
+  document.getElementById('calcBox').style.display = 'none';
+  currentLat = null; currentLng = null;
+  currentItems = [];
+  renderItemList();
+  document.getElementById('locStatus').innerHTML = '';
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('fTanggal').value = today;
+  onJenisChange();
+}
+
+function flattenEntries(){
+  const rows = [];
+  entries.forEach(e=>{
+    const its = e.items && e.items.length ? e.items : [null];
+    its.forEach(it=> rows.push({ entry: e, item: it }));
+  });
+  return rows;
+}
+
+// ----- tab Daftar Data -----
+function renderTable(){
+  const body = document.getElementById('dataBody');
+  const empty = document.getElementById('emptyMsg');
+  const badge = document.getElementById('countBadge');
+  const grandBar = document.getElementById('grandTotalBar');
+  badge.textContent = entries.length + ' WP';
+  const flat = flattenEntries();
+  if(flat.length===0){
+    body.innerHTML = '';
+    empty.style.display = 'block';
+    grandBar.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  body.innerHTML = flat.map(({entry:e, item:it})=>{
+    const idx = e.items ? e.items.indexOf(it) : -1;
+    return `
+    <tr>
+      <td>${escapeHtml(e.nama)}${e.nik ? '<br><small>NIK: '+escapeHtml(e.nik)+'</small>' : ''}</td>
+      <td>${escapeHtml(e.badanUsaha||'-')}</td>
+      <td>${it ? formatPeriode(it.periode) : '-'}</td>
+      <td>${it ? escapeHtml(it.jenisLabel) : '-'}</td>
+      <td>${it ? `<span class="tarif-tag ${it.calc.tarifPajak>=40?'tarif-40':'tarif-10'}">${it.calc.tarifPajak}%</span>` : '-'}</td>
+      <td>${it ? formatRupiah(it.calc.omzet) : '-'}</td>
+      <td>${it ? formatRupiah(it.calc.pajakTerutang) : '-'}</td>
+      <td>${it && it.calc.okupansi !== null ? it.calc.okupansi.toFixed(1)+'%' : '-'}</td>
+      <td>${payStatusCell(it)}${it && idx>=0 ? '<button type="button" class="pay-btn" onclick="openPayModal(\''+e.id+'\','+idx+')">💰 Bayar</button>' : ''}</td>
+      <td>${(e.lat && e.lng) ? '<a href="https://www.google.com/maps?q='+e.lat+','+e.lng+'" target="_blank">🗺 '+e.lat.toFixed(4)+', '+e.lng.toFixed(4)+'</a>' : '-'}${e.alamat ? '<br><small>'+escapeHtml(e.alamat.slice(0,60))+(e.alamat.length>60?'…':'')+'</small>' : ''}</td>
+      <td>${e.tanggal||'-'}</td>
+      <td><button class="del-btn" onclick="deleteEntry('${e.id}')">Hapus WP</button></td>
+    </tr>
+  `;}).join('');
+  const grandTotal = flat.reduce((s,{item:it})=> s + (it ? it.calc.pajakTerutang : 0), 0);
+  grandBar.style.display = 'flex';
+  document.getElementById('grandTotalValue').textContent = formatRupiah(grandTotal);
+}
+
+function payStatusCell(it){
+  if(!it) return '-';
+  const p = it.pembayaran;
+  if(!p || !p.status || p.status==='Belum Bayar'){
+    return '<span class="badge badge-belum">Belum Bayar</span>';
+  }
+  if(p.status==='Lunas'){
+    return '<span class="badge badge-lunas">Lunas</span>';
+  }
+  return '<span class="badge badge-sebagian">Sebagian</span>';
+}
+
+// ----- modal pembayaran (Laporan Penerimaan) -----
+function openPayModal(entryId, itemIdx){
+  const e = entries.find(x=>x.id===entryId);
+  if(!e) return;
+  const it = e.items[itemIdx];
+  if(!it) return;
+  payTarget = {entryId, itemIdx};
+  document.getElementById('payModalInfo').innerHTML = `<b>${escapeHtml(e.nama)}</b>${e.badanUsaha ? ' — '+escapeHtml(e.badanUsaha) : ''}<br>Periode ${formatPeriode(it.periode)} — ${escapeHtml(it.jenisLabel)}<br>Ketetapan Pajak: <b>${formatRupiah(it.calc.pajakTerutang)}</b>`;
+  const p = it.pembayaran || {};
+  document.getElementById('payTanggal').value = p.tanggalBayar || new Date().toISOString().slice(0,10);
+  document.getElementById('payJumlah').value = p.jumlahBayar != null ? p.jumlahBayar : Math.round(it.calc.pajakTerutang);
+  document.getElementById('payStatus').value = p.status || 'Lunas';
+  document.getElementById('payKet').value = p.keterangan || '';
+  document.getElementById('payModal').classList.add('show');
+}
+
+function closePayModal(){
+  document.getElementById('payModal').classList.remove('show');
+  payTarget = null;
+}
+
+function savePayment(){
+  if(!payTarget) return;
+  const e = entries.find(x=>x.id===payTarget.entryId);
+  if(!e) return;
+  const it = e.items[payTarget.itemIdx];
+  if(!it) return;
+  it.pembayaran = {
+    tanggalBayar: document.getElementById('payTanggal').value,
+    jumlahBayar: parseFloat(document.getElementById('payJumlah').value) || 0,
+    status: document.getElementById('payStatus').value,
+    keterangan: document.getElementById('payKet').value.trim()
+  };
+  persistEntries();
+  closePayModal();
+  renderTable();
+  showToast('✔ Pembayaran dicatat');
+}
+
+// ----- Data Potensi Pajak -----
+function populateKecFilter(){
+  const sel = document.getElementById('potKecFilter');
+  const cur = sel.value;
+  const kecs = Array.from(new Set(entries.map(e=>e.kecamatan).filter(Boolean))).sort();
+  sel.innerHTML = '<option value="">Semua Kecamatan</option>' + kecs.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  sel.value = kecs.includes(cur) ? cur : '';
+}
+
+function potensiRows(){
+  const filter = document.getElementById('potKecFilter') ? document.getElementById('potKecFilter').value : '';
+  return entries
+    .filter(e => !filter || e.kecamatan === filter)
+    .map(e=>{
+      const items = e.items || [];
+      const total = items.reduce((s,it)=>s+it.calc.pajakTerutang, 0);
+      const okItems = items.filter(it=>it.calc.okupansi !== null);
+      const rataOkupansi = okItems.length ? okItems.reduce((s,it)=>s+it.calc.okupansi,0)/okItems.length : null;
+      return { entry:e, jumlahObjek: items.length, rataOkupansi, totalPotensi: total };
+    })
+    .sort((a,b)=> b.totalPotensi - a.totalPotensi);
+}
+
+function renderPotensi(){
+  populateKecFilter();
+  const rows = potensiRows();
+  const body = document.getElementById('potensiBody');
+  const empty = document.getElementById('emptyPotensi');
+  body.innerHTML = rows.map(r=>`
+    <tr>
+      <td>${escapeHtml(r.entry.nama)}</td>
+      <td>${escapeHtml(r.entry.badanUsaha||'-')}</td>
+      <td>${escapeHtml(r.entry.kecamatan||'-')}</td>
+      <td>${r.jumlahObjek}</td>
+      <td>${r.rataOkupansi !== null ? r.rataOkupansi.toFixed(1)+'%' : '-'}</td>
+      <td>${formatRupiah(r.totalPotensi)}</td>
+    </tr>
+  `).join('');
+  empty.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('potWpCount').textContent = rows.length;
+  document.getElementById('potTotalValue').textContent = formatRupiah(rows.reduce((s,r)=>s+r.totalPotensi,0));
+}
+
+function exportPotensiExcel(){
+  const rows = potensiRows().map(r=>({
+    'Nama WP': r.entry.nama,
+    'Nama Usaha': r.entry.badanUsaha,
+    'Kecamatan/Desa': r.entry.kecamatan,
+    'Jumlah Objek': r.jumlahObjek,
+    'Rata-rata Okupansi (%)': r.rataOkupansi !== null ? r.rataOkupansi.toFixed(1) : '',
+    'Total Potensi Pajak (Rp)': Math.round(r.totalPotensi)
+  }));
+  if(!rows.length){ showToast('Belum ada data untuk diekspor.'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:22},{wch:24},{wch:18},{wch:12},{wch:18},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Potensi Kesenian-Hiburan');
+  XLSX.writeFile(wb, 'data-potensi-kesenian-hiburan-' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// ----- Laporan Penerimaan -----
+function penerimaanFlat(year){
+  return flattenEntries().filter(({entry:e,item:it})=> it && it.periode && it.periode.slice(0,4)===year);
+}
+
+function populatePenerimaanYearSelect(){
+  const sel = document.getElementById('penTahun');
+  const years = availableYears();
+  const cur = sel.value;
+  sel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  sel.value = years.includes(cur) ? cur : years[0];
+}
+
+function renderPenerimaan(){
+  populatePenerimaanYearSelect();
+  const year = document.getElementById('penTahun').value;
+  const flat = penerimaanFlat(year);
+
+  const byMonth = {};
+  for(let m=0;m<12;m++) byMonth[m] = {ketetapan:0, diterima:0};
+  let totalKetetapan=0, totalDiterima=0;
+  flat.forEach(({item:it})=>{
+    const m = parseInt(it.periode.slice(5,7),10) - 1;
+    byMonth[m].ketetapan += it.calc.pajakTerutang;
+    const bayar = (it.pembayaran ? it.pembayaran.jumlahBayar : 0) || 0;
+    byMonth[m].diterima += bayar;
+    totalKetetapan += it.calc.pajakTerutang;
+    totalDiterima += bayar;
+  });
+
+  const body = document.getElementById('penerimaanBody');
+  const empty = document.getElementById('emptyPenerimaan');
+  body.innerHTML = '';
+  let anyData = false;
+  for(let m=0;m<12;m++){
+    const d = byMonth[m];
+    if(d.ketetapan===0 && d.diterima===0) continue;
+    anyData = true;
+    const piutang = d.ketetapan - d.diterima;
+    const persen = d.ketetapan>0 ? (d.diterima/d.ketetapan*100).toFixed(1) : '0.0';
+    body.innerHTML += `<tr><td>${bulanNama(m)} ${year}</td><td>${formatRupiah(d.ketetapan)}</td><td>${formatRupiah(d.diterima)}</td><td>${formatRupiah(piutang)}</td><td>${persen}%</td></tr>`;
+  }
+  empty.style.display = anyData ? 'none' : 'block';
+
+  const piutangTotal = totalKetetapan - totalDiterima;
+  const persenTotal = totalKetetapan>0 ? (totalDiterima/totalKetetapan*100).toFixed(1) : '0.0';
+  document.getElementById('penKetetapanValue').textContent = formatRupiah(totalKetetapan);
+  document.getElementById('penDiterimaValue').textContent = formatRupiah(totalDiterima);
+  document.getElementById('penPiutangValue').textContent = formatRupiah(piutangTotal);
+  document.getElementById('penCapaianValue').textContent = persenTotal + '%';
+
+  const detailBody = document.getElementById('penerimaanDetailBody');
+  detailBody.innerHTML = flat.map(({entry:e, item:it})=>{
+    const p = it.pembayaran;
+    const bayar = (p ? p.jumlahBayar : 0) || 0;
+    return `<tr>
+      <td>${escapeHtml(e.nama)}</td>
+      <td>${formatPeriode(it.periode)}</td>
+      <td>${formatRupiah(it.calc.pajakTerutang)}</td>
+      <td>${payStatusCell(it)}</td>
+      <td>${formatRupiah(bayar)}</td>
+      <td>${p && p.tanggalBayar ? p.tanggalBayar : '-'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportPenerimaanExcel(){
+  const year = document.getElementById('penTahun').value;
+  const flat = penerimaanFlat(year);
+  const rows = flat.map(({entry:e, item:it})=>{
+    const p = it.pembayaran || {};
+    return {
+      'Nama WP': e.nama,
+      'Usaha': e.badanUsaha,
+      'Periode': formatPeriode(it.periode),
+      'Ketetapan Pajak (Rp)': Math.round(it.calc.pajakTerutang),
+      'Status': p.status || 'Belum Bayar',
+      'Jumlah Diterima (Rp)': Math.round(p.jumlahBayar || 0),
+      'Tanggal Bayar': p.tanggalBayar || '',
+      'Keterangan': p.keterangan || ''
+    };
+  });
+  if(!rows.length){ showToast('Belum ada data untuk tahun ini.'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:20},{wch:22},{wch:14},{wch:18},{wch:12},{wch:18},{wch:14},{wch:22}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Penerimaan ' + year);
+  XLSX.writeFile(wb, 'laporan-penerimaan-kesenian-hiburan-' + year + '.xlsx');
+}
+
+function deleteEntry(id){
+  if(!confirm('Hapus data WP ini beserta semua data objek pajaknya?')) return;
+  entries = entries.filter(e=>e.id!==id);
+  persistEntries();
+  deleteEntryFromCloud(id);
+  renderTable();
+  renderBulanan();
+  renderTahunan();
+  showToast('Data dihapus.');
+}
+
+function exportExcel(){
+  if(entries.length===0){
+    showToast('Belum ada data untuk diekspor.');
+    return;
+  }
+  const flat = flattenEntries();
+  const rows = flat.map(({entry:e, item:it})=>({
+    'Nama WP': e.nama,
+    'NIK KTP': e.nik,
+    'Nama Usaha': e.badanUsaha,
+    'NPWPD': e.npwpd,
+    'No HP': e.hp,
+    'Petugas Survei': e.petugas,
+    'Periode Laporan': it ? formatPeriode(it.periode) : '',
+    'Jenis Jasa Kesenian/Hiburan': it ? it.jenisLabel : '',
+    'Omzet Bruto (Rp)': it ? Math.round(it.calc.omzet) : '',
+    'Tarif Pajak': it ? it.calc.tarifPajak+'%' : '',
+    'Pajak Terutang (Rp)': it ? Math.round(it.calc.pajakTerutang) : '',
+    'Okupansi Otomatis (%)': it && it.calc.okupansi !== null ? it.calc.okupansi.toFixed(1) : '',
+    'Status Bayar': it && it.pembayaran ? it.pembayaran.status : 'Belum Bayar',
+    'Jumlah Diterima (Rp)': it && it.pembayaran ? Math.round(it.pembayaran.jumlahBayar||0) : '',
+    'Tanggal Bayar': it && it.pembayaran ? it.pembayaran.tanggalBayar||'' : '',
+    'Kecamatan/Desa': e.kecamatan,
+    'Alamat (Otomatis/Manual)': e.alamat,
+    'Latitude': e.lat || '',
+    'Longitude': e.lng || '',
+    'Catatan': e.catatan,
+    'Tanggal Survei': e.tanggal
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = rows.length ? Object.keys(rows[0]).map(k=>({wch: Math.max(12, Math.min(35, k.length+4))})) : [];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data WP Kesenian-Hiburan');
+  XLSX.writeFile(wb, 'data-wp-kesenian-hiburan-' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// ----- Laporan Bulanan -----
+function availableYears(){
+  const flat = flattenEntries().filter(r=>r.item && r.item.periode);
+  const years = new Set(flat.map(r => r.item.periode.slice(0,4)));
+  years.add(String(new Date().getFullYear()));
+  return Array.from(years).sort((a,b)=> b.localeCompare(a));
+}
+
+function populateYearSelect(){
+  const sel = document.getElementById('lapTahun');
+  const years = availableYears();
+  const cur = sel.value;
+  sel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  sel.value = years.includes(cur) ? cur : years[0];
+}
+
+function renderBulanan(){
+  populateYearSelect();
+  const year = document.getElementById('lapTahun').value;
+  const flat = flattenEntries().filter(r=>r.item && r.item.periode && r.item.periode.slice(0,4)===year);
+
+  const byMonth = {};
+  for(let m=0;m<12;m++) byMonth[m] = {count:0, omzet:0, pajak:0};
+  flat.forEach(r=>{
+    const m = parseInt(r.item.periode.slice(5,7),10) - 1;
+    byMonth[m].count++;
+    byMonth[m].omzet += r.item.calc.omzet;
+    byMonth[m].pajak += r.item.calc.pajakTerutang;
+  });
+
+  const body = document.getElementById('bulananBody');
+  const empty = document.getElementById('emptyBulanan');
+  const bar = document.getElementById('bulananTotalBar');
+  body.innerHTML = '';
+  let totalOmzet=0, totalPajak=0, anyData=false;
+  for(let m=0;m<12;m++){
+    const d = byMonth[m];
+    if(d.count===0) continue;
+    anyData = true;
+    totalOmzet += d.omzet; totalPajak += d.pajak;
+    body.innerHTML += `<tr><td>${bulanNama(m)} ${year}</td><td>${d.count}</td><td>${formatRupiah(d.omzet)}</td><td>${formatRupiah(d.pajak)}</td></tr>`;
+  }
+  if(anyData){
+    empty.style.display = 'none';
+    bar.style.display = 'flex';
+    document.getElementById('bulananTotalValue').textContent = formatRupiah(totalPajak);
+  } else {
+    empty.style.display = 'block';
+    bar.style.display = 'none';
+  }
+}
+
+function exportBulananExcel(){
+  const year = document.getElementById('lapTahun').value;
+  const flat = flattenEntries().filter(r=>r.item && r.item.periode && r.item.periode.slice(0,4)===year);
+  const byMonth = {};
+  for(let m=0;m<12;m++) byMonth[m] = {count:0, omzet:0, pajak:0};
+  flat.forEach(r=>{
+    const m = parseInt(r.item.periode.slice(5,7),10) - 1;
+    byMonth[m].count++; byMonth[m].omzet += r.item.calc.omzet; byMonth[m].pajak += r.item.calc.pajakTerutang;
+  });
+  const rows = [];
+  for(let m=0;m<12;m++){
+    const d = byMonth[m];
+    rows.push({
+      'Bulan': bulanNama(m) + ' ' + year,
+      'Jumlah Laporan': d.count,
+      'Total Omzet (Rp)': Math.round(d.omzet),
+      'Total Pajak (Rp)': Math.round(d.pajak)
+    });
+  }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:18},{wch:16},{wch:18},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Laporan Bulanan ' + year);
+  XLSX.writeFile(wb, 'laporan-bulanan-kesenian-hiburan-' + year + '.xlsx');
+}
+
+// ----- Laporan Tahunan -----
+function renderTahunan(){
+  const flat = flattenEntries().filter(r=>r.item && r.item.periode);
+  const byYear = {};
+  flat.forEach(r=>{
+    const y = r.item.periode.slice(0,4);
+    if(!byYear[y]) byYear[y] = {count:0, omzet:0, pajak:0};
+    byYear[y].count++; byYear[y].omzet += r.item.calc.omzet; byYear[y].pajak += r.item.calc.pajakTerutang;
+  });
+  const years = Object.keys(byYear).sort((a,b)=> b.localeCompare(a));
+
+  const body = document.getElementById('tahunanBody');
+  const empty = document.getElementById('emptyTahunan');
+  const bar = document.getElementById('tahunanTotalBar');
+  const badge = document.getElementById('tahunanCountBadge');
+  badge.textContent = years.length + ' Tahun';
+  body.innerHTML = '';
+  let totalOmzet=0, totalPajak=0;
+  years.forEach(y=>{
+    const d = byYear[y];
+    totalOmzet += d.omzet; totalPajak += d.pajak;
+    body.innerHTML += `<tr><td>${y}</td><td>${d.count}</td><td>${formatRupiah(d.omzet)}</td><td>${formatRupiah(d.pajak)}</td></tr>`;
+  });
+  if(years.length){
+    empty.style.display = 'none';
+    bar.style.display = 'flex';
+    document.getElementById('tahunanTotalValue').textContent = formatRupiah(totalPajak);
+  } else {
+    empty.style.display = 'block';
+    bar.style.display = 'none';
+  }
+}
+
+function exportTahunanExcel(){
+  const flat = flattenEntries().filter(r=>r.item && r.item.periode);
+  const byYear = {};
+  flat.forEach(r=>{
+    const y = r.item.periode.slice(0,4);
+    if(!byYear[y]) byYear[y] = {count:0, omzet:0, pajak:0};
+    byYear[y].count++; byYear[y].omzet += r.item.calc.omzet; byYear[y].pajak += r.item.calc.pajakTerutang;
+  });
+  const years = Object.keys(byYear).sort((a,b)=> a.localeCompare(b));
+  const rows = years.map(y=>({
+    'Tahun': y,
+    'Jumlah Laporan': byYear[y].count,
+    'Total Omzet (Rp)': Math.round(byYear[y].omzet),
+    'Total Pajak (Rp)': Math.round(byYear[y].pajak)
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:10},{wch:16},{wch:18},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Laporan Tahunan');
+  XLSX.writeFile(wb, 'laporan-tahunan-kesenian-hiburan.xlsx');
+}
+
+// init
+(function(){
+  populateJenisSelect();
+  initMap();
+  loadEntries();
+  renderTable();
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('fTanggal').value = today;
+  onJenisChange();
+  checkAuthAndStart();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.log('SW gagal:', err));
+  });
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  const installBtn = document.getElementById('installBtn');
+  if(installBtn) installBtn.style.display = 'inline-block';
+});
+
+function installApp(){
+  const installBtn = document.getElementById('installBtn');
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{
+      deferredPrompt = null;
+      if(installBtn) installBtn.style.display = 'none';
+    });
+  }
+}
+
+// ----- deteksi iOS: Safari/iPhone/iPad tidak mendukung beforeinstallprompt,
+// jadi tampilkan instruksi "Add to Home Screen" manual sebagai gantinya -----
+function isIos(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS 13+ menyamar sebagai Mac
+}
+function isInStandaloneMode(){
+  return ('standalone' in window.navigator && window.navigator.standalone) ||
+    window.matchMedia('(display-mode: standalone)').matches;
+}
+if(isIos() && !isInStandaloneMode()){
+  const hint = document.getElementById('iosInstallHint');
+  if(hint) hint.style.display = 'block';
+}
+</script>
+</body>
+</html>
